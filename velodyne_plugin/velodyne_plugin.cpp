@@ -18,7 +18,18 @@ namespace gazebo
   //ModelPluginクラスを継承
   class VelodynePlugin : public ModelPlugin
   {
-    event::ConnectionPtr update_conn_;
+
+    private: 
+      event::ConnectionPtr update_conn_;
+      physics::ModelPtr model;
+    /// \brief Pointer to the joint.
+      physics::JointPtr joint;
+      physics::WorldPtr world;
+    /// \brief A PID controller for the joint.
+      common::PID pid;
+      common::Time sim_time;
+      common::Time real_time;
+
     /// \brief Constructor
     public: VelodynePlugin() {}
     public: ~VelodynePlugin() {}
@@ -46,6 +57,8 @@ namespace gazebo
 
        // Store the model pointer for convenience.
        this->model = _model;
+       //モデルがいるWorldを取得する
+       this->world = _model->GetWorld();
        
       physics::LinkPtr link = this->model->GetLink("my_velodyne::velodyne::top");
       std::cerr << link << "\n";
@@ -77,7 +90,10 @@ namespace gazebo
 
     public: void OnUpdate(){
       //std::cerr << "aaaa\n";
-      this->joint->SetForce(0, 0.001);
+      this->joint->SetForce(0, 0.00001);
+      this->sim_time = this->world->SimTime();
+      this->real_time = this->world->RealTime();
+      std::cerr << "smi time : " << this->sim_time << ",real time : "  << this->real_time << "\n";
       //ジョイントにトルクを発生させる
       //forceになっているのは他のジョイントの場合と共通化させるため
       //第一引数にはjointのインデックスを示す => 単一ジョイントの場合0のみだが2自由度ジョイントの場合は0 or 1となる
@@ -85,13 +101,6 @@ namespace gazebo
       //link->SetTorque(point1);
     }
 
-    private: physics::ModelPtr model;
-
-    /// \brief Pointer to the joint.
-    private: physics::JointPtr joint;
-
-    /// \brief A PID controller for the joint.
-    private: common::PID pid;
   };
 
   // Tell Gazebo about this plugin, so that Gazebo can call Load on this plugin.
